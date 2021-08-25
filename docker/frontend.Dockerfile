@@ -28,8 +28,7 @@ COPY --from=builder /app/staticfiles /var/www/static
 RUN rm /etc/nginx/conf.d/default.conf
 COPY nginx.conf.template /etc/nginx/templates/nginx.conf.template
 
-
-## add permissions
+## to support running as an arbitrary user, directories and files
 RUN touch /var/run/nginx.pid && \
     chgrp -R 0 \
         /var/www/static \
@@ -47,3 +46,5 @@ RUN touch /var/run/nginx.pid && \
 EXPOSE 8080
 
 USER 1001
+
+CMD ["nginx", "-g", "daemon off;"]

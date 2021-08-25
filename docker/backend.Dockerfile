@@ -28,13 +28,20 @@ ENV MYSQL_DATABASE="mysite" \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-EXPOSE 8000
-
 RUN apk add --no-cache mariadb-connector-c-dev
+
+EXPOSE 8000
 
 COPY --from=builder /app /app
 
+RUN chmod +x /app/entrypoint.sh
+
+## to support running as an arbitrary user, directories and files
+RUN chgrp -R 0 /app && \
+    chmod -R g=u /app
+
 USER 1001
+
 WORKDIR /app
 
 CMD [ "/app/entrypoint.sh" ]
