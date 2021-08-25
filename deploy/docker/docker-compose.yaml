@@ -1,0 +1,50 @@
+version: "3.7"
+services:
+  mysql:
+    image: mysql:5.6
+    restart: always
+    user: 1001:1001
+    networks:
+      - mysite-nw
+    environment:
+      MYSQL_DATABASE: mysite
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin
+      MYSQL_ROOT_PASSWORD: admin
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  backend:
+    image: quay.io/jkandasa/django-blog-backend:master
+    restart: always
+    depends_on:
+      - mysql
+    networks:
+      - mysite-nw
+    environment:
+      MYSQL_DATABASE: mysite
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin
+      MYSQL_HOST: mysql
+      MYSQL_PORT: "3306"
+      CREATE_ADMIN: "true"
+      ADMIN_USER: "admin"
+      ADMIN_PASSWORD: "admin"
+
+  frontend:
+    image: quay.io/jkandasa/django-blog-frontend:master
+    restart: always
+    depends_on:
+      - backend
+    networks:
+      - mysite-nw
+    environment:
+      BACKEND_URL: "http://backend:8000"
+    ports:
+      - "8080:8080"
+
+volumes:
+  mysql-data: 
+networks:
+    mysite-nw:
+      driver: bridge

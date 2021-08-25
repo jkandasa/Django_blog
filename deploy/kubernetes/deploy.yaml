@@ -1,0 +1,254 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sample-app
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pv-claim
+  namespace: sample-app
+spec:
+  storageClassName: "" # update your storage class
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysite-config
+  namespace: sample-app
+  labels:
+    app: django-mysite
+data:
+  MYSQL_HOST: mysql.sample-app.svc.cluster.local
+  MYSQL_PORT: "3306"
+  MYSQL_DATABASE: mysite
+  MYSQL_USER: admin
+  CREATE_ADMIN: "true"
+  BACKEND_URL: "http://backend.sample-app.svc.cluster.local:8000"
+
+---
+kind: Secret
+apiVersion: v1
+metadata:
+  name: mysite-secret
+  namespace: sample-app
+  labels:
+    app: django-mysite
+data:
+  MYSQL_ROOT_PASSWORD: YWRtaW4K
+  MYSQL_PASSWORD: YWRtaW4K
+type: Opaque
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: mysql
+  namespace: sample-app
+  labels:
+    app: django-mysite
+    component: mysql
+spec:
+  ports:
+    - name: 3306-tcp
+      protocol: TCP
+      port: 3306
+      targetPort: 3306
+  selector:
+    app: django-mysite
+    component: mysql
+  type: ClusterIP
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: backend
+  namespace: sample-app
+  labels:
+    app: django-mysite
+    component: backend
+spec:
+  ports:
+    - name: 8000-tcp
+      protocol: TCP
+      port: 8000
+      targetPort: 8000
+  selector:
+    app: django-mysite
+    component: backend
+  type: ClusterIP
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: frontend
+  namespace: sample-app
+  labels:
+    app: django-mysite
+    component: frontend
+spec:
+  ports:
+    - name: 8080-tcp
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+  selector:
+    app: django-mysite
+    component: frontend
+  type: ClusterIP
+
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: mysql
+  namespace: sample-app
+  labels:
+    app: django-mysite
+    component: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: django-mysite
+      component: mysql
+  template:
+    metadata:
+      labels:
+        app: django-mysite
+        component: mysql
+    spec:
+      volumes:
+        - name: mysql-pv-storage
+          persistentVolumeClaim:
+            claimName: mysql-pv-claim
+      containers:
+        - name: mysql
+          image: mysql:5.6
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - mountPath: "/var/lib/mysql"
+              name: mysql-pv-storage
+          ports:
+            - containerPort: 3306
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: mysite-config
+          env:
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysite-secret
+                  key: MYSQL_PASSWORD
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysite-secret
+                  key: MYSQL_ROOT_PASSWORD
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: backend
+  namespace: sample-app
+  labels:
+    app: django-mysite
+    component: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: django-mysite
+      component: backend
+  template:
+    metadata:
+      labels:
+        app: django-mysite
+        component: backend
+    spec:
+      initContainers:
+        - name: wait-for-mysql
+          image: mysql:5.6
+          command:
+            - "/bin/sh"
+            - "-c"
+            - |
+              while ! mysqladmin ping --host=${MYSQL_HOST} --port=${MYSQL_PORT} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} --silent; do
+                echo "waiting for mysql"
+                sleep 1
+              done
+          envFrom:
+            - configMapRef:
+                name: mysite-config
+          env:
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysite-secret
+                  key: MYSQL_PASSWORD
+      containers:
+        - name: backend
+          image: quay.io/jkandasa/django-blog-backend:master
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: mysite-config
+          env:
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysite-secret
+                  key: MYSQL_PASSWORD
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: frontend
+  namespace: sample-app
+  labels:
+    app: django-mysite
+    component: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: django-mysite
+      component: frontend
+  template:
+    metadata:
+      labels:
+        app: django-mysite
+        component: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: quay.io/jkandasa/django-blog-frontend:master
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: mysite-config
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
