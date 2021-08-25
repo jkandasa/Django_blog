@@ -26,7 +26,7 @@ SECRET_KEY = '0x!b#(1*cd73w$&azzc6p+essg7v=g80ls#z&xcx*mpemx&@9$'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -81,9 +81,17 @@ WSGI_APPLICATION = 'mysite.wsgi.application'
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
 
 DATABASES = {
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.sqlite3',
+    #     'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    # }
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.getenv('MYSQL_DATABASE', 'mysite'),
+        'USER': os.getenv('MYSQL_USER', 'admin'),
+        'PASSWORD': os.getenv('MYSQL_PASSWORD', 'admin'),
+        'HOST': os.getenv('MYSQL_HOST', 'mysql'),
+        'PORT': os.getenv('MYSQL_PORT', '3306'),
     }
 }
 
@@ -131,13 +139,6 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static'), ]
 
 
 STATIC_ROOT  = os.path.join(BASE_DIR, 'staticfiles')
-
-
-
-
-
-
-
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
