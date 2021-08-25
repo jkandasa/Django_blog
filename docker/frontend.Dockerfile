@@ -12,10 +12,10 @@ RUN apk add --no-cache \
 
 COPY . /app
 WORKDIR /app
-RUN python3 -m venv .env \
-    && source .env/bin/activate \
-    && pip install -r requirements.txt \
-    && python manage.py collectstatic 
+RUN python3 -m venv .env && \
+    source .env/bin/activate && \
+    pip install -r requirements.txt && \
+    python manage.py collectstatic 
 
 # final build
 FROM nginx:1.21-alpine
@@ -30,12 +30,20 @@ COPY nginx.conf.template /etc/nginx/templates/nginx.conf.template
 
 
 ## add permissions
-RUN chown -R nginx:nginx /var/www/static \
-        && chmod -R 755 /var/www/static \
-        && chown -R nginx:nginx /var/cache/nginx \
-        && chown -R nginx:nginx /var/log/nginx \
-        && chown -R nginx:nginx /etc/nginx/conf.d \
-        && touch /var/run/nginx.pid \
-        && chown -R nginx:nginx /var/run/nginx.pid
+RUN touch /var/run/nginx.pid && \
+    chgrp -R 0 \
+        /var/www/static \
+        /var/cache/nginx \
+        /var/log/nginx \
+        /etc/nginx/conf.d \
+        /var/run/nginx.pid && \
+    chmod -R g=u \
+        /var/www/static \
+        /var/cache/nginx \
+        /var/log/nginx \
+        /etc/nginx/conf.d \
+        /var/run/nginx.pid
 
-USER nginx
+EXPOSE 8080
+
+USER 1001
