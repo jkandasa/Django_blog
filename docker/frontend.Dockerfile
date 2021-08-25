@@ -27,3 +27,5 @@ COPY --from=builder /app/staticfiles /var/www/static
 
 RUN rm /etc/nginx/conf.d/default.conf
 COPY nginx.conf.template /etc/nginx/templates/nginx.conf.template
+
+USER 1001

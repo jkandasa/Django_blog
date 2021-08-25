@@ -33,6 +33,8 @@ EXPOSE 8000
 RUN apk add --no-cache mariadb-connector-c-dev
 
 COPY --from=builder /app /app
+
+USER 1001
 WORKDIR /app
 
 CMD [ "/app/entrypoint.sh" ]
