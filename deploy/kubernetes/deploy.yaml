@@ -43,8 +43,8 @@ metadata:
   labels:
     app: django-mysite
 data:
-  MYSQL_ROOT_PASSWORD: YWRtaW4K
-  MYSQL_PASSWORD: YWRtaW4K
+  MYSQL_ROOT_PASSWORD: YWRtaW4=
+  MYSQL_PASSWORD: YWRtaW4=
 type: Opaque
 
 ---
