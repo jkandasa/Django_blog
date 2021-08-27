@@ -1,5 +1,4 @@
 FROM python:3.6-alpine as builder
-
 # set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
@@ -13,7 +12,8 @@ RUN python3 -m venv .env \
     && source .env/bin/activate \
     && pip install -r requirements.txt
 
-# final build
+
+# final container image
 FROM python:3.6-alpine
 
 # set environment variables

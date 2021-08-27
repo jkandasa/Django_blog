@@ -1,5 +1,4 @@
 FROM python:3.6-alpine as builder
-
 # set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
@@ -17,7 +16,8 @@ RUN python3 -m venv .env && \
     pip install -r requirements.txt && \
     python manage.py collectstatic 
 
-# final build
+
+# final container image
 FROM nginx:1.21-alpine
 
 # set environment variables
