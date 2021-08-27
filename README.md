@@ -38,9 +38,9 @@ oc create -f ./deploy/kubernetes/openshift-route.yaml
 * default django admin username and password are `admin` / `admin`
 ### docker / docker compose
 * your host firewall should allow inbound access to the port `8080`
-* user portal: http://<host-ip>:8080
-* admin portal: http://<host-ip>:8080/admin
+* user portal: http://your-host-ip:8080
+* admin portal: http://your-host-ip:8080/admin
 
 ### Kubernetes / OpenShift
-* user portal: http://frontend.<cluster-domain>
-* admin portal: http://frontend.<cluster-domain>/admin
+* user portal: http://frontend.your-cluster-domain.com
+* admin portal: http://frontend.your-cluster-domain.com/admin
